@@ -1,0 +1,40 @@
+@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix units: <http://lv2plug.in/ns/extensions/units#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+
+<https://github.com/jkbd#me>
+        a foaf:Person ;
+        foaf:name "Jakob Dübel" ;
+        foaf:mbox <mailto:jkbd@posteo.de> ;
+        foaf:homepage <https://github.com/jkbd> .
+
+<@LV2_URI_PREFIX@@PROJECT_NAME@>
+	a lv2:Plugin ,
+		lv2:UtilityPlugin ,
+		lv2:ConverterPlugin ;
+	a doap:Project ;
+	lv2:minorVersion @PROJECT_VERSION_MINOR@ ;
+	lv2:microVersion @PROJECT_VERSION_PATCH@ ;
+	doap:name "Trigger2MIDI" ;
+	doap:license <https://opensource.org/licenses/ISC> ;
+	doap:maintainer <https://github.com/jkbd#me> ;
+	lv2:optionalFeature lv2:hardRTCapable ;
+	lv2:port [
+		a lv2:AudioPort ,
+			lv2:InputPort ;
+		lv2:index 0 ;
+		lv2:symbol "Snare" ;
+		lv2:name "Snare Trigger Input"
+	] , [
+		a atom:AtomPort ,
+			lv2:OutputPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;
+		lv2:index 1 ;
+		lv2:symbol "MidiOut" ;
+		lv2:name "MIDI Output" ;
+	] .
