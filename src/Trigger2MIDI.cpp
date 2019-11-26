@@ -22,20 +22,20 @@ namespace jkbd {
 				      const char*               bundle_path,
 				      const LV2_Feature* const* features)
 	{
-		Trigger2MIDI* t2m = new Trigger2MIDI();
-		t2m->sample_rate(rate);
-		return static_cast<LV2_Handle>(t2m);
+		Trigger2MIDI* self = new Trigger2MIDI();
+		self->sample_rate(rate);
+		return static_cast<LV2_Handle>(self);
 	}
 	
 	static void connect_port(LV2_Handle instance, uint32_t port, void* data)
 	{
-		Trigger2MIDI* t2m = static_cast<Trigger2MIDI*>(instance);
+		Trigger2MIDI* self = static_cast<Trigger2MIDI*>(instance);
 		switch (static_cast<Trigger2MIDI::Port>(port)) {
 		case Trigger2MIDI::Port::SNARE:
-			t2m->snare = static_cast<float*>(data);
+			self->snare = static_cast<float*>(data);
 			break;
 		case Trigger2MIDI::Port::MIDI_OUT:
-			t2m->midi_out = static_cast<float*>(data);
+			self->midi_out = static_cast<float*>(data);
 			break;     
 		}
 	}
@@ -44,8 +44,8 @@ namespace jkbd {
 	}
 	
 	static void run(LV2_Handle instance, uint32_t n_samples) {
-		Trigger2MIDI* t2m = static_cast<Trigger2MIDI*>(instance);
-		t2m->run(n_samples);
+		Trigger2MIDI* self = static_cast<Trigger2MIDI*>(instance);
+		self->run(n_samples);
 	}
 	
 	static void deactivate(LV2_Handle instance) {

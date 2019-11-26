@@ -82,13 +82,13 @@ namespace jkbd {
 	static const LV2_Descriptor
 	descriptor = {
 		jkbd::uri,
-		instantiate, // instantiate
-		connect_port, // connect_port,
-		activate, // activate
-		run, // run
-		deactivate, // deactivate
-		cleanup, // cleanup
-		extension_data // extension_data	      
+		instantiate,
+		connect_port,
+		activate,
+		run,
+		deactivate,
+		cleanup,
+		extension_data
 	};
 } // namespace jkbd
 
