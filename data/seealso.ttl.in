@@ -24,17 +24,18 @@
 	doap:maintainer <https://github.com/jkbd#me> ;
 	lv2:optionalFeature lv2:hardRTCapable ;
 	lv2:port [
-		a lv2:AudioPort ,
-			lv2:InputPort ;
-		lv2:index 0 ;
-		lv2:symbol "Snare" ;
-		lv2:name "Snare Trigger Input"
-	] , [
 		a atom:AtomPort ,
 			lv2:OutputPort ;
 		atom:bufferType atom:Sequence ;
 		atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;
-		lv2:index 1 ;
+		lv2:index 0 ;
 		lv2:symbol "MidiOut" ;
 		lv2:name "MIDI Output" ;
+	] , [
+		a lv2:AudioPort ,
+			lv2:InputPort ;
+		lv2:index 1 ;
+		lv2:symbol "Snare" ;
+		lv2:name "Snare Trigger Input";
+		rdfs:comment "Optimized for Yamaha TP65 pads."
 	] .

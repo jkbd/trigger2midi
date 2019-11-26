@@ -30,13 +30,13 @@ namespace jkbd {
 	class Trigger2MIDI {
 	public:
 		enum Port {
-			SNARE = 0,
-			MIDI_OUT = 1
+			MIDI_OUT = 0,
+			SNARE = 1,
 		};
 		
 		// Port buffers
-		float*  snare;
 		float*  midi_out;
+		float*  snare;		
 		
 		void sample_rate(double sr);
 		void run(uint32_t n_samples);

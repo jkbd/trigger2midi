@@ -11,9 +11,9 @@ namespace jkbd {
 	}
 	
 	void Trigger2MIDI::run(uint32_t n_samples) {
-		for (uint32_t pos = 0; pos < n_samples; ++pos) {		       
-			snare[pos] = 0.0;
+		for (uint32_t pos = 0; pos < n_samples; ++pos) {
 			midi_out[pos] = 0.0;
+			snare[pos] = 0.0;			
 		}
 	}
 	
