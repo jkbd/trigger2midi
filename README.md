@@ -23,3 +23,9 @@ to install it in `$PREFIX/lib/lv2/`. You could change the `$PREFIX` by running
 ```
 $ cmake -D CMAKE_INSTALL_PREFIX=/your/path ..
 ```
+
+## Run
+
+```
+$ jalv https://github.com/jkbd/trigger2midi
+```
