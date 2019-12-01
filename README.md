@@ -1,5 +1,6 @@
 # Trigger2MIDI
 
+*Super early development state!*
 Convert electronic drum trigger signals to MIDI events.
 
 ## Build
