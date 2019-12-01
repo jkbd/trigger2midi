@@ -29,15 +29,12 @@ namespace jkbd {
 			if (zero_crossing) {
 				//std::cerr << "Zero cross" << std::endl;
 				
-				// Reset the zero crossing counter
-				zero[2] = zero[1];
-				zero[1] = zero[0];
-				zero[0] = 0.0;
 
 				// We compare the areas between zero
 				// crossings. A peak area is framed by
 				// two areas smaller than the peak.
-				if ((sum[0] < sum[1]) && (sum[1] > sum[2])) {
+				if (((sum[0]/zero[0]) < (sum[1]/zero[1])) &&
+				    ((sum[1]/zero[1]) > (sum[2]/zero[2]))) {
 					// The last integral was a
 					// peak. If it is above the
 					// threshold, send a MIDI
@@ -63,7 +60,13 @@ namespace jkbd {
 				} else {
 					// Just go on
 				}
-				
+
+				// Reset the zero crossing counter
+				zero[2] = zero[1];
+				zero[1] = zero[0];
+				zero[0] = 0.0;
+
+				sum[2] = sum[1];				
 				sum[1] = sum[0];
 				sum[0] = 0.0;
 			} else {
