@@ -20,22 +20,65 @@ namespace jkbd {
 	void Trigger2MIDI::run(uint32_t n_samples) {
 		forge->prepare(midi_out);
 		
-		for (uint32_t n = 0; n < n_samples; ++n) {			
-			const float threshold = 0.01f; // -40dB
+		for (uint32_t n = 0; n < n_samples; ++n) {		
+			x[0] = trigger_in[Trigger2MIDI::Port::SNARE][n];
+			
+			bool zero_crossing = (x[0] > 0.0f) && (x[1] <= 0.0f) ||
+				(x[0] < 0.0f) && (x[1] >= 0.0f);
+			
+			if (zero_crossing) {
+				//std::cerr << "Zero cross" << std::endl;
+				
+				// Reset the zero crossing counter
+				zero[2] = zero[1];
+				zero[1] = zero[0];
+				zero[0] = 0.0;
 
-			const float abs1 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
-			const bool trigger1 = (abs1 > threshold);		
-			if (trigger1) {
-                                const uint32_t velocity = (int) (abs1*127);
-				forge->enqueue_midi_note(42, velocity, n);
+				// We compare the areas between zero
+				// crossings. A peak area is framed by
+				// two areas smaller than the peak.
+				if ((sum[0] < sum[1]) && (sum[1] > sum[2])) {
+					// The last integral was a
+					// peak. If it is above the
+					// threshold, send a MIDI
+					// event.
+					const float integral = sum[1]/zero[1];
+
+					const float threshold = 0.5f; // TODO Adjust
+					if ((integral != std::numeric_limits<float>::infinity()) &&
+					    (integral > threshold)) {
+						std::cerr << "Integral: " << integral << std::endl;
+						
+						// Send
+						const uint32_t velocity = (int) (integral*127); // TODO: scale
+						const int64_t frame_time = n-(zero[0]+zero[1]); // TODO guard range
+						if (velocity > 0) {
+							forge->enqueue_midi_note(42, velocity, frame_time);
+						} else {
+							// Drop it
+						}
+					} else {
+						// Nothing
+					}					
+				} else {
+					// Just go on
+				}
+				
+				sum[1] = sum[0];
+				sum[0] = 0.0;
+			} else {
+				zero[0] += 1;
+				sum[0] += std::fabs(x[0]);
 			}
 
-			const float abs2 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
-			const bool trigger2 = (abs2 > threshold);		
-			if (trigger2) {
-                                const uint32_t velocity = (int) (abs2*127);
-				forge->enqueue_midi_note(43, velocity, n);
-			}
+			x[1] = x[0];
+
+			// const float abs2 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
+			// const bool trigger2 = (abs2 > threshold);		
+			// if (trigger2) {
+                        //         const uint32_t velocity = (int) (abs2*127);
+			// 	forge->enqueue_midi_note(43, velocity, n);
+			// }
 		}
 		forge->finish();
 	}

@@ -20,9 +20,9 @@
 #define TRIGGER2MIDI_H
 
 #include <iostream>
-
 #include <cmath>
 #define _USE_MATH_DEFINES
+#include <limits>
 
 #include "lv2.h"
 #include "MIDIEventForge.hpp"
@@ -59,10 +59,20 @@ namespace jkbd {
 		
 	private:
 		// // Note: x[0] is x_{n} and x[1] is backward in time x_{n-1}
-		// float x[2]{ 0.0f, 0.0f };
+		float x[2]{ 0.0f, 0.0f };
 		
 		// bool index{ false };
-		double sr{ 8000.0 };		
+		double sr{ 8000.0 };
+
+
+		// We compare the areas between zero crossings. A peak
+		// area is framed by two areas smaller than the peak.
+		
+		// The number of samples between the zero crossings.
+		uint32_t zero[3]{ 0, 0 };
+		
+		// The sums between the last 4 zero crossings.
+		float sum[3]{ 0.0, 0.0, 0.0 };
 	};
 	
 	static LV2_Handle
