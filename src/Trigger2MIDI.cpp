@@ -22,15 +22,19 @@ namespace jkbd {
 		
 		for (uint32_t n = 0; n < n_samples; ++n) {			
 			const float threshold = 0.01f; // -40dB
-			const float abs = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
-			const bool trigger = (abs > threshold);
-			
-			if (trigger) {
-				// TODO how to measure the velocity?
-                                const uint32_t velocity = (int) (abs*127);
-				forge->enqueue_midi_note(velocity, n);
-			} else {
-				// Do nothing
+
+			const float abs1 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
+			const bool trigger1 = (abs1 > threshold);		
+			if (trigger1) {
+                                const uint32_t velocity = (int) (abs1*127);
+				forge->enqueue_midi_note(42, velocity, n);
+			}
+
+			const float abs2 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
+			const bool trigger2 = (abs2 > threshold);		
+			if (trigger2) {
+                                const uint32_t velocity = (int) (abs2*127);
+				forge->enqueue_midi_note(43, velocity, n);
 			}
 		}
 		forge->finish();

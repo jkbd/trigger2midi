@@ -38,7 +38,7 @@ namespace jkbd {
 		//~MIDIEventForge();
 
 		void prepare(LV2_Atom_Sequence* sink);
-		void enqueue_midi_note(int8_t velocity, int64_t frame_time);
+		void enqueue_midi_note(int8_t note_number, int8_t velocity, int64_t frame_time);
 		void finish();
 		
 	private:

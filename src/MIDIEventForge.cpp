@@ -19,18 +19,12 @@ namespace jkbd {
 		lv2_atom_forge_sequence_head(&forge, &frame, 0);
 	}
 
-	void MIDIEventForge::enqueue_midi_note(int8_t velocity, int64_t frame_time) {
+	void MIDIEventForge::enqueue_midi_note(int8_t note_number, int8_t velocity, int64_t frame_time) {
 		uint8_t raw_midi[3];
 		const uint8_t channel = 0x09;
 		raw_midi[0] = (channel & 0x0f) | ((velocity & 0x7f) ? 0x90 : 0x80);
-		//raw_midi[1] = velocity != 0 ? (static_cast<LV2_Handle>(*m_note) & 0x7f) : midi_note_value;
-		raw_midi[1] = 42; // note number
+		raw_midi[1] = note_number;
 		raw_midi[2] = velocity & 0x7f;
-		// if (velocity != 0) {
-		// 	midi_note_value = raw_midi[1];
-		// } else {
-		// 	// Nothing
-		// }
 		enqueue(raw_midi, frame_time);
 	}
 		
