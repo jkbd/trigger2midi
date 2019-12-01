@@ -43,7 +43,8 @@ add_custom_target(bundle
 
 # Position independed code is set automatically
 add_library(${PROJECT_NAME} MODULE
-    src/Trigger2MIDI.hpp src/Trigger2MIDI.cpp)
+  src/Trigger2MIDI.hpp src/Trigger2MIDI.cpp
+  src/MIDIEventForge.hpp src/MIDIEventForge.cpp)
 add_dependencies(${PROJECT_NAME} bundle)
 set_target_properties(${PROJECT_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/${LV2_BUNDLE_DIR})

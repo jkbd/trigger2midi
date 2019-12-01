@@ -38,4 +38,11 @@
 		lv2:symbol "Snare" ;
 		lv2:name "Snare Trigger Input";
 		rdfs:comment "Optimized for Yamaha TP65 pads."
+	] , [
+		a lv2:AudioPort ,
+			lv2:InputPort ;
+		lv2:index 2 ;
+		lv2:symbol "Tom" ;
+		lv2:name "Tom Trigger Input";
+		rdfs:comment "Optimized for Yamaha TP65 pads."
 	] .

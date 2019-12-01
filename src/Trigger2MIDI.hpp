@@ -19,36 +19,50 @@
 #ifndef TRIGGER2MIDI_H
 #define TRIGGER2MIDI_H
 
+#include <iostream>
+
 #include <cmath>
 #define _USE_MATH_DEFINES
 
 #include "lv2.h"
+#include "MIDIEventForge.hpp"
+
+#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
+#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
 
 // A namespace to force these symbols being not exported in the shared
 // library.
 namespace jkbd {
 	class Trigger2MIDI {
 	public:
+		//Trigger2MIDI();
+		//~Trigger2MIDI();
+		
 		enum Port {
-			MIDI_OUT = 0,
-			SNARE = 1,
+			SNARE = 0, // must a valid index in `trigger_in[]`!
+			TOM = 1,			
+			MIDI_OUT = 2
 		};
 		
 		// Port buffers
-		float*  midi_out;
-		float*  snare;		
+		float* trigger_in[2];
+		LV2_Atom_Sequence* midi_out;
 		
 		void sample_rate(double sr);
 		void run(uint32_t n_samples);
+
+		LV2_URID_Map* map;
+		MIDIEventForge* forge;
 		
 	private:
 		// // Note: x[0] is x_{n} and x[1] is backward in time x_{n-1}
-		// float f[2]{ 0.0f, 0.0f };
 		// float x[2]{ 0.0f, 0.0f };
-		// float y[2]{ 0.0f, 1.0f };
 		
 		// bool index{ false };
-		double sr{ 8000.0 };
+		double sr{ 8000.0 };		
 	};
 	
 	static LV2_Handle
