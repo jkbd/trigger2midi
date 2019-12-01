@@ -18,7 +18,7 @@ namespace jkbd {
 	}
 	
 	void Trigger2MIDI::run(uint32_t n_samples) {
-		//forge->prepare(midi_out);
+		forge->prepare(midi_out);
 		
 		for (uint32_t n = 0; n < n_samples; ++n) {			
 			const float threshold = 0.01f; // -40dB
@@ -26,17 +26,14 @@ namespace jkbd {
 			const bool trigger = (abs > threshold);
 			
 			if (trigger) {
-				std::cerr << abs << std::endl;
-				// Forge MIDI event
-
 				// TODO how to measure the velocity?
-				
-                                //const uint32_t velocity = (int(abs)*127) & 0x7f;
-				forge->enqueue_midi_note(67, n);			} else {
+                                const uint32_t velocity = (int) (abs*127);
+				forge->enqueue_midi_note(velocity, n);
+			} else {
 				// Do nothing
 			}
 		}
-		//forge->finish();
+		forge->finish();
 	}
 	
 	static LV2_Handle instantiate(const LV2_Descriptor*     descriptor,
