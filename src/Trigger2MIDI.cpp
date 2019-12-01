@@ -27,33 +27,31 @@ namespace jkbd {
 				(x[0] < 0.0f) && (x[1] >= 0.0f);
 			
 			if (zero_crossing) {
-				//std::cerr << "Zero cross" << std::endl;
-				
+				//std::cerr << "Zero cross" << std::endl;	
 
 				// We compare the areas between zero
 				// crossings. A peak area is framed by
 				// two areas smaller than the peak.
-				if (((sum[0]/zero[0]) < (sum[1]/zero[1])) &&
-				    ((sum[1]/zero[1]) > (sum[2]/zero[2]))) {
+				if ((sum[0] < sum[1]) &&
+				    (sum[1] > sum[2]) &&
+				    (sum[2] > sum[0])) {
 					// The last integral was a
 					// peak. If it is above the
 					// threshold, send a MIDI
 					// event.
 					const float integral = sum[1]/zero[1];
 
-					const float threshold = 0.5f; // TODO Adjust
+					const float scale = 127.0f*2;
+					const float threshold = 1/scale; // TODO Adjust
 					if ((integral != std::numeric_limits<float>::infinity()) &&
 					    (integral > threshold)) {
-						std::cerr << "Integral: " << integral << std::endl;
+					        std::cout << "Integral: " << integral << std::endl;
 						
-						// Send
-						const uint32_t velocity = (int) (integral*127); // TODO: scale
-						const int64_t frame_time = n-(zero[0]+zero[1]); // TODO guard range
-						if (velocity > 0) {
-							forge->enqueue_midi_note(42, velocity, frame_time);
-						} else {
-							// Drop it
-						}
+						// Send event
+                                                const uint32_t velocity = (int) (integral*scale);
+						const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
+
+						forge->enqueue_midi_note(42, velocity, frame_time);
 					} else {
 						// Nothing
 					}					
