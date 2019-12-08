@@ -6,11 +6,6 @@ namespace jkbd {
 	// }
 
 	// Trigger2MIDI::~Trigger2MIDI() {}
-
-	
-	inline float decibel_to_coef(float gain) {
-		return ((gain) > -90.0f ? powf(10.0f, (gain) * 0.05f) : 0.0f);
-	}
 	
 	void Trigger2MIDI::sample_rate(double sr) {
 		assert((8000.0 <= sr) and (sr <= 192000.0));
@@ -25,55 +20,87 @@ namespace jkbd {
 			
 			bool zero_crossing = (x[0] > 0.0f) && (x[1] <= 0.0f) ||
 				(x[0] < 0.0f) && (x[1] >= 0.0f);
-			
-			if (zero_crossing) {
-				//std::cerr << "Zero cross" << std::endl;	
 
-				// We compare the areas between zero
-				// crossings. A peak area is framed by
-				// two areas smaller than the peak.
-				if ((sum[0] < sum[1]) &&
-				    (sum[1] > sum[2]) &&
-				    (sum[2] > sum[0])) {
-					// The last integral was a
-					// peak. If it is above the
-					// threshold, send a MIDI
-					// event.
-					const float integral = sum[1]/zero[1];
+			const float thresh = 1.4125375446227555e-05; // -96dB
+			if (zero_crossing && (peak[0] > thresh) && (area[0] > thresh)) {
+				// Compute the features
+				feature[4] = feature[3];
+				feature[3] = feature[2];
+				feature[2] = feature[1];
+				feature[1] = feature[0];
+				feature[0] = (peak[0]-peak[1])*4;
 
-					const float scale = 127.0f*2;
-					const float threshold = 1/scale; // TODO Adjust
-					if ((integral != std::numeric_limits<float>::infinity()) &&
-					    (integral > threshold)) {
-					        std::cout << "Integral: " << integral << std::endl;
-						
-						// Send event
-                                                const uint32_t velocity = (int) (integral*scale);
-						const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
+				feature[9] = feature[8];
+				feature[8] = feature[7];
+				feature[7] = feature[6];
+				feature[6] = feature[5];
+				feature[5] = (area[0]-area[1])/25,
 
-						forge->enqueue_midi_note(42, velocity, frame_time);
-					} else {
-						// Nothing
-					}					
-				} else {
-					// Just go on
+				feature[14] = feature[13];
+				feature[13] = feature[12];
+				feature[12] = feature[11];
+				feature[11] = feature[10];
+				feature[10] = (std::fabs(area[0]) + std::fabs(area[1])*2 + std::fabs(area[2])) /
+					(std::fabs(width[0]) + std::fabs(width[1])*2 + std::fabs(width[2]));
+
+				// Multi-layer perceptron
+				const float bias = 1.0;
+				float input_coef[][2] = {
+					{ 0.08781958,  0.14427346},
+					{ 0.03916803,  0.00817929},
+					{ 0.00404339, -0.03656273},
+					{-0.11457519,  0.16075008},
+					{-0.02217951, -0.13798249},
+					{-0.04510742, -0.06000047},
+					{-0.10551339,  0.10150451},
+					{-0.29324703, -0.26153838},
+					{-0.19326483, -0.14095425},
+					{-0.04843963,  0.0159393 },
+					{-0.07972298, -0.11687325},
+					{-0.06327483, -0.11805964},
+					{ 0.00130454, -0.07612888},
+					{-0.02511146,  0.0083457 },
+					{ 0.01779765,  0.05809699}
+				};
+				float hidden_coef[] = { -1.16724501, 0.6446441 };
+
+				float h0 = 0.72136712*bias;
+				for (int i = 0; i < 15; ++i) {
+					h0 += input_coef[i][0]*feature[i];
 				}
-
-				// Reset the zero crossing counter
-				zero[2] = zero[1];
-				zero[1] = zero[0];
-				zero[0] = 0.0;
-
-				sum[2] = sum[1];				
-				sum[1] = sum[0];
-				sum[0] = 0.0;
+				float h1 = 0.0148684*bias;
+				for (int i = 0; i < 15; ++i) {
+					h1 += input_coef[i][1]*feature[i];
+				}
+				float output = 0.83236072*bias + hidden_coef[0]*h0 + hidden_coef[1]*h1;
+				
+				// Send event
+				const uint32_t velocity = (int) (127*output);
+				const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
+				
+				forge->enqueue_midi_note(42, velocity, frame_time);
+			
+				// Shift memory and reset the current values
+				area[2] = area[1];	
+				area[1] = area[0];
+				area[0] = 0.0;
+				
+				peak[1] = peak[0];
+				peak[0] = 0.0;
+				
+				width[2] = width[1];
+				width[1] = width[0];
+				width[0] = 0;
 			} else {
-				zero[0] += 1;
-				sum[0] += std::fabs(x[0]);
+				// Continue accumulating data for the features
+				area[0] += x[0];
+				peak[0] = (std::fabs(x[0]) > peak[0]) ? std::fabs(x[0]) : peak[0];
+				width[0] += 1;
 			}
 
 			x[1] = x[0];
 
+			// // TODO: Other channel
 			// const float abs2 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
 			// const bool trigger2 = (abs2 > threshold);		
 			// if (trigger2) {

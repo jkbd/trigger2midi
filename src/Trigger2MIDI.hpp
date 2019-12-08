@@ -63,16 +63,14 @@ namespace jkbd {
 		
 		// bool index{ false };
 		double sr{ 8000.0 };
-
-
-		// We compare the areas between zero crossings. A peak
-		// area is framed by two areas smaller than the peak.
 		
 		// The number of samples between the zero crossings.
-		uint32_t zero[3]{ 0, 0 };
+		uint32_t width[3]{ 0, 0, 0 };
 		
-		// The sums between the last 4 zero crossings.
-		float sum[3]{ 0.0, 0.0, 0.0 };
+		float area[3]{ 0.0f, 0.0f, 0.0f };
+		float peak[2]{ 0.0f, 0.0f };
+
+		float feature[15]{ 0.0f };
 	};
 	
 	static LV2_Handle
