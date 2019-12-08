@@ -21,8 +21,9 @@ namespace jkbd {
 			bool zero_crossing = (x[0] > 0.0f) && (x[1] <= 0.0f) ||
 				(x[0] < 0.0f) && (x[1] >= 0.0f);
 
-			const float thresh = 1.4125375446227555e-05; // -96dB
-			if (zero_crossing && (peak[0] > thresh) && (area[0] > thresh)) {
+			const float thresh = 0.001; // -60dB
+			//&& (peak[0] > thresh) && (peak[1] > thresh)
+			if (zero_crossing && (width[0] > 2) && (peak[0] > thresh)) {
 				// Compute the features
 				feature[4] = feature[3];
 				feature[3] = feature[2];
@@ -43,42 +44,53 @@ namespace jkbd {
 				feature[10] = (std::fabs(area[0]) + std::fabs(area[1])*2 + std::fabs(area[2])) /
 					(std::fabs(width[0]) + std::fabs(width[1])*2 + std::fabs(width[2]));
 
+				// // Print data for external analysis
+				// std::cerr << peak[0] << ", ";
+				// std::cerr << area[0] << ", ";
+				// std::cerr << width[0] << ", ";
+				// for (int i = 0; i < 14; ++i) {
+				//   std::cerr << feature[i] << ", ";
+				// }
+				// std::cerr << feature[14] << std::endl << std::flush;
+				
 				// Multi-layer perceptron
 				const float bias = 1.0;
 				float input_coef[][2] = {
-					{ 0.08781958,  0.14427346},
-					{ 0.03916803,  0.00817929},
-					{ 0.00404339, -0.03656273},
-					{-0.11457519,  0.16075008},
-					{-0.02217951, -0.13798249},
-					{-0.04510742, -0.06000047},
-					{-0.10551339,  0.10150451},
-					{-0.29324703, -0.26153838},
-					{-0.19326483, -0.14095425},
-					{-0.04843963,  0.0159393 },
-					{-0.07972298, -0.11687325},
-					{-0.06327483, -0.11805964},
-					{ 0.00130454, -0.07612888},
-					{-0.02511146,  0.0083457 },
-					{ 0.01779765,  0.05809699}
+							 {-0.01887056,  0.17745961},
+							 {-0.04980684, -0.37425802},
+							 {-0.19862374,  0.27215002},
+							 { 0.12072475,  0.15215885},
+							 {-0.02291138, -0.0678146 },
+							 {-0.26290462,  0.69684289},
+							 {-0.37603136,  0.13301792},
+							 {-0.26963562, -0.02777826},
+							 {-0.26027779, -0.34322798},
+							 {-0.18931252, -0.12752291},
+							 { 0.05382507,  0.2500078 },
+							 {-0.10843112,  0.38812912},
+							 { 0.04721491, -0.36425306},
+							 { 0.12577473, -0.33522199},
+							 {-0.08102299,  0.07325073}
 				};
-				float hidden_coef[] = { -1.16724501, 0.6446441 };
-
-				float h0 = 0.72136712*bias;
+				float hidden_coef[] = { 0.91944073, 0.19848509 };
+				
+				float h0 = 0.64539328*bias;
 				for (int i = 0; i < 15; ++i) {
 					h0 += input_coef[i][0]*feature[i];
 				}
-				float h1 = 0.0148684*bias;
+				float h1 = 0.51988299*bias;
 				for (int i = 0; i < 15; ++i) {
 					h1 += input_coef[i][1]*feature[i];
 				}
-				float output = 0.83236072*bias + hidden_coef[0]*h0 + hidden_coef[1]*h1;
+				float output = -0.69507503*bias + hidden_coef[0]*h0 + hidden_coef[1]*h1;
 				
-				// Send event
+				// Send event				
+				//std::cerr << "Output = " << output << std::endl;
 				const uint32_t velocity = (int) (127*output);
 				const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
-				
-				forge->enqueue_midi_note(42, velocity, frame_time);
+				if (velocity > 0) {
+				        forge->enqueue_midi_note(42, velocity, frame_time);
+				}
 			
 				// Shift memory and reset the current values
 				area[2] = area[1];	
