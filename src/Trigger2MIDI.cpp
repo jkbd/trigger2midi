@@ -11,6 +11,14 @@ namespace jkbd {
 		assert((8000.0 <= sr) and (sr <= 192000.0));
 		Trigger2MIDI::sr = sr;
 	}
+
+	float logistic(float x) {
+		return 1.0/(1.0 + exp(-x));
+	}
+
+	float relu(float x) {
+		return fmax(0, x);
+	}
 	
 	void Trigger2MIDI::run(uint32_t n_samples) {
 		forge->prepare(midi_out);
@@ -56,40 +64,42 @@ namespace jkbd {
 				// Multi-layer perceptron
 				const float bias = 1.0;
 				float input_coef[][2] = {
-							 {-0.01887056,  0.17745961},
-							 {-0.04980684, -0.37425802},
-							 {-0.19862374,  0.27215002},
-							 { 0.12072475,  0.15215885},
-							 {-0.02291138, -0.0678146 },
-							 {-0.26290462,  0.69684289},
-							 {-0.37603136,  0.13301792},
-							 {-0.26963562, -0.02777826},
-							 {-0.26027779, -0.34322798},
-							 {-0.18931252, -0.12752291},
-							 { 0.05382507,  0.2500078 },
-							 {-0.10843112,  0.38812912},
-							 { 0.04721491, -0.36425306},
-							 { 0.12577473, -0.33522199},
-							 {-0.08102299,  0.07325073}
+					{ 0.95233889,  1.06093597},
+					{ 2.28917277,  1.5363628 },
+					{ 0.02438731,  3.56180378},
+					{-2.49006055, -1.02614327},
+					{-2.39228576, -4.51061454},
+					{ 1.28147514, -0.11029411},
+					{-1.07330877,  0.61565508},
+					{-0.61274183, -0.58215588},
+					{ 0.91324164,  1.33258507},
+					{ 2.0846333,  -0.90034941},
+					{-1.08729938, -0.2603812 },
+					{-1.32153188, -0.62109089},
+					{-1.15727765, -0.7113571 },
+					{ 1.81884387,  0.49478535},
+					{ 2.66445232,  3.65069426}
 				};
-				float hidden_coef[] = { 0.91944073, 0.19848509 };
+				float hidden_coef[] = { -3.05759241, -4.65564461 };
 				
-				float h0 = 0.64539328*bias;
+				float h0 = 0.6850604*bias;
 				for (int i = 0; i < 15; ++i) {
 					h0 += input_coef[i][0]*feature[i];
 				}
-				float h1 = 0.51988299*bias;
+				float h1 = 0.87747318*bias;
 				for (int i = 0; i < 15; ++i) {
 					h1 += input_coef[i][1]*feature[i];
 				}
-				float output = -0.69507503*bias + hidden_coef[0]*h0 + hidden_coef[1]*h1;
-				
-				// Send event				
-				//std::cerr << "Output = " << output << std::endl;
-				const uint32_t velocity = (int) (127*output);
-				const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
-				if (velocity > 0) {
-				        forge->enqueue_midi_note(42, velocity, frame_time);
+				float output = logistic(1.27502634*bias + hidden_coef[0]*relu(h0) + hidden_coef[1]*relu(h1));
+				bool is_onset = output > 0.5 ? true : false;
+
+				if (is_onset) {
+					// Send event
+					std::cerr << "Peak = " << peak[0] << ", " << peak[1] << std::endl;
+					
+					const uint32_t velocity = (int) (127*2.5*peak[1]);
+					const int64_t frame_time = n; // FIXME: precise location of the zero-crossing
+					forge->enqueue_midi_note(42, velocity, frame_time);					
 				}
 			
 				// Shift memory and reset the current values
