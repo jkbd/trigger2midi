@@ -1,6 +1,7 @@
 # Trigger2MIDI
 
-*Super early development state!*
+**Super early development state!**
+
 Convert electronic drum trigger signals to MIDI events.
 
 ## Build
@@ -10,8 +11,8 @@ $ cmake .. -D CMAKE_BUILD_TYPE=Release
 $ cmake --build .
 ```
 
-To install, copy the bundle `osc.lv2` manually to the [standard
-locations](http://lv2plug.in/pages/filesystem-hierarchy-standard.html)
+To install, copy the bundle `trigger2midi.lv2` manually to the
+[standard locations](http://lv2plug.in/pages/filesystem-hierarchy-standard.html)
 or run
 
 ```
