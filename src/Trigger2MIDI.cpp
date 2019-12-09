@@ -64,44 +64,68 @@ namespace jkbd {
 				// Multi-layer perceptron
 				const float bias = 1.0;
 				float input_coef[][2] = {
-					{ 0.95233889,  1.06093597},
-					{ 2.28917277,  1.5363628 },
-					{ 0.02438731,  3.56180378},
-					{-2.49006055, -1.02614327},
-					{-2.39228576, -4.51061454},
-					{ 1.28147514, -0.11029411},
-					{-1.07330877,  0.61565508},
-					{-0.61274183, -0.58215588},
-					{ 0.91324164,  1.33258507},
-					{ 2.0846333,  -0.90034941},
-					{-1.08729938, -0.2603812 },
-					{-1.32153188, -0.62109089},
-					{-1.15727765, -0.7113571 },
-					{ 1.81884387,  0.49478535},
-					{ 2.66445232,  3.65069426}
+					{ 1.59130024e-14, 4.80507142e-02},
+					{ 2.00524609e-14, 1.45720108e+00},
+					{ 1.88107435e-14, 3.93510468e+00},
+					{ 2.08451176e-20, -3.89766830e+00},
+					{-9.49115911e-16, -1.84985435e+00},
+					{ 9.33463497e-20, -6.59678297e-01},
+					{ 9.64755433e-16, 1.10553202e+00},
+					{-6.86476553e-18, 2.09183583e-01},
+					{-5.40512524e-16, -9.71125567e-01},
+					{ 1.51264731e-15, 6.37983165e-01},
+					{ 1.66624620e-19, -1.15571777e-01},
+					{ 6.63123179e-18, -1.41381996e-01},
+					{ 1.85755054e-16, -4.95151333e-01},
+					{ 5.53419263e-19, 1.14266855e-01},
+					{ 4.54864489e-20, -1.49160444e-02}
 				};
-				float hidden_coef[] = { -3.05759241, -4.65564461 };
 				
-				float h0 = 0.6850604*bias;
+				float hidden_coef[][2] = {
+					{-5.76198028e-12, -1.92716620e-11},
+					{-2.58190048e+00, -3.78298016e+00}
+				};
+				
+				float h0 = -0.41589519*bias;
 				for (int i = 0; i < 15; ++i) {
 					h0 += input_coef[i][0]*feature[i];
 				}
-				float h1 = 0.87747318*bias;
+				h0 = relu(h0);
+
+				float h1 = 1.92296812*bias;
 				for (int i = 0; i < 15; ++i) {
 					h1 += input_coef[i][1]*feature[i];
 				}
-				float output = logistic(1.27502634*bias + hidden_coef[0]*relu(h0) + hidden_coef[1]*relu(h1));
-				bool is_onset = output > 0.5 ? true : false;
+				h1 = relu(h1);
 
-				if (is_onset) {
+				float o0 = -0.70179547*bias;
+				o0 += hidden_coef[0][0]*h0;
+				o0 += hidden_coef[1][0]*h1;
+				o0 = logistic(o0);
+				
+				float o1 = 0.05947538*bias;
+				o1 += hidden_coef[0][1]*h0;
+				o1 += hidden_coef[1][1]*h1;
+				o1 = logistic(o1);
+
+				std::cerr << "Output = (" << o0 << ", " << o1 << ")" << std::endl;
+				if (o0 > 0.5) {
 					// Send event
-					std::cerr << "Peak = " << peak[0] << ", " << peak[1] << std::endl;
+					std::cerr << "Cross = " << peak[0] << ", " << peak[1] << std::endl;
 					
 					const uint32_t velocity = (int) (127*2.5*peak[1]);
 					const int64_t frame_time = n; // FIXME: precise location of the zero-crossing
-					forge->enqueue_midi_note(42, velocity, frame_time);					
+					forge->enqueue_midi_note(42, velocity, frame_time);
 				}
-			
+				if (o1 > 0.5) {
+					// Send event
+					std::cerr << "Mid = " << peak[0] << ", " << peak[1] << std::endl;
+					
+					const uint32_t velocity = (int) (127*2.5*peak[1]);
+					const int64_t frame_time = n; // FIXME: precise location of the zero-crossing
+					forge->enqueue_midi_note(43, velocity, frame_time);
+				}
+				
 				// Shift memory and reset the current values
 				area[2] = area[1];	
 				area[1] = area[0];
