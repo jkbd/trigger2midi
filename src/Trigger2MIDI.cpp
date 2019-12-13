@@ -1,151 +1,127 @@
 #include "Trigger2MIDI.hpp"
 
 namespace jkbd {
-	// Trigger2MIDI::Trigger2MIDI() {
-	// 	forge = new MIDIEventForge();
-	// }
+	float logistic(float x) {
+		return 1 / (1 + exp(-x));
+	}
 
-	// Trigger2MIDI::~Trigger2MIDI() {}
+	float relu(float x) {
+		return std::fmax(0, x);
+	}
+
+	bool is_zero_crossing(float x0, float x1) {
+		return (x0 >= 0.0f) && (x1 < 0.0f) || (x0 < 0.0f) && (x1 >= 0.0f);
+	}
 	
 	void Trigger2MIDI::sample_rate(double sr) {
 		assert((8000.0 <= sr) and (sr <= 192000.0));
 		Trigger2MIDI::sr = sr;
 	}
-
-	float logistic(float x) {
-		return 1.0/(1.0 + exp(-x));
-	}
-
-	float relu(float x) {
-		return fmax(0, x);
-	}
 	
 	void Trigger2MIDI::run(uint32_t n_samples) {
 		forge->prepare(midi_out);
+
+		const float sampling_freq = 44100.0;
+		const float fConst0 = std::tan((873.362732f / std::min<float>(192000.0f, std::max<float>(1.0f, float(sampling_freq)))));
+		const float fConst1 = (1.0f / fConst0);
+		const float fConst2 = (1.0f / (((fConst1 + 1.41421354f) / fConst0) + 1.0f));
+		const float fConst3 = (((fConst1 + -1.41421354f) / fConst0) + 1.0f);
+		const float fConst4 = (2.0f * (1.0f - (1.0f / (fConst0*fConst0))));
 		
-		for (uint32_t n = 0; n < n_samples; ++n) {		
-			x[0] = trigger_in[Trigger2MIDI::Port::SNARE][n];
-			
-			bool zero_crossing = (x[0] > 0.0f) && (x[1] <= 0.0f) ||
-				(x[0] < 0.0f) && (x[1] >= 0.0f);
+		for (uint32_t n = 0; n < n_samples; ++n) {
+			// 2nd order Butterworth lowpass filter at 278Hz.
+			fRec0[0] = (trigger_in[Trigger2MIDI::Port::SNARE][n] - (fConst2 * ((fConst3 * fRec0[2]) + (fConst4 * fRec0[1]))));
+			x[0] = fConst2 * (fRec0[2] + (fRec0[0] + (2.0f * fRec0[1])));
+			fRec0[2] = fRec0[1];
+			fRec0[1] = fRec0[0];
 
-			const float thresh = 0.001; // -60dB
-			//&& (peak[0] > thresh) && (peak[1] > thresh)
-			if (zero_crossing && (width[0] > 2) && (peak[0] > thresh)) {
-				// Compute the features
-				feature[4] = feature[3];
-				feature[3] = feature[2];
-				feature[2] = feature[1];
-				feature[1] = feature[0];
-				feature[0] = (peak[0]-peak[1])*4;
-
-				feature[9] = feature[8];
-				feature[8] = feature[7];
-				feature[7] = feature[6];
-				feature[6] = feature[5];
-				feature[5] = (area[0]-area[1])/25,
-
-				feature[14] = feature[13];
-				feature[13] = feature[12];
-				feature[12] = feature[11];
-				feature[11] = feature[10];
-				feature[10] = (std::fabs(area[0]) + std::fabs(area[1])*2 + std::fabs(area[2])) /
-					(std::fabs(width[0]) + std::fabs(width[1])*2 + std::fabs(width[2]));
-
-				// // Print data for external analysis
-				// std::cerr << peak[0] << ", ";
-				// std::cerr << area[0] << ", ";
-				// std::cerr << width[0] << ", ";
-				// for (int i = 0; i < 14; ++i) {
-				//   std::cerr << feature[i] << ", ";
-				// }
-				// std::cerr << feature[14] << std::endl << std::flush;
-				
-				// Multi-layer perceptron
-				const float bias = 1.0;
-				float input_coef[][2] = {
-					{ 1.59130024e-14, 4.80507142e-02},
-					{ 2.00524609e-14, 1.45720108e+00},
-					{ 1.88107435e-14, 3.93510468e+00},
-					{ 2.08451176e-20, -3.89766830e+00},
-					{-9.49115911e-16, -1.84985435e+00},
-					{ 9.33463497e-20, -6.59678297e-01},
-					{ 9.64755433e-16, 1.10553202e+00},
-					{-6.86476553e-18, 2.09183583e-01},
-					{-5.40512524e-16, -9.71125567e-01},
-					{ 1.51264731e-15, 6.37983165e-01},
-					{ 1.66624620e-19, -1.15571777e-01},
-					{ 6.63123179e-18, -1.41381996e-01},
-					{ 1.85755054e-16, -4.95151333e-01},
-					{ 5.53419263e-19, 1.14266855e-01},
-					{ 4.54864489e-20, -1.49160444e-02}
-				};
-				
-				float hidden_coef[][2] = {
-					{-5.76198028e-12, -1.92716620e-11},
-					{-2.58190048e+00, -3.78298016e+00}
-				};
-				
-				float h0 = -0.41589519*bias;
-				for (int i = 0; i < 15; ++i) {
-					h0 += input_coef[i][0]*feature[i];
-				}
-				h0 = relu(h0);
-
-				float h1 = 1.92296812*bias;
-				for (int i = 0; i < 15; ++i) {
-					h1 += input_coef[i][1]*feature[i];
-				}
-				h1 = relu(h1);
-
-				float o0 = -0.70179547*bias;
-				o0 += hidden_coef[0][0]*h0;
-				o0 += hidden_coef[1][0]*h1;
-				o0 = logistic(o0);
-				
-				float o1 = 0.05947538*bias;
-				o1 += hidden_coef[0][1]*h0;
-				o1 += hidden_coef[1][1]*h1;
-				o1 = logistic(o1);
-
-				std::cerr << "Output = (" << o0 << ", " << o1 << ")" << std::endl;
-				if (o0 > 0.5) {
-					// Send event
-					std::cerr << "Cross = " << peak[0] << ", " << peak[1] << std::endl;
+			if (is_zero_crossing(x[0], x[1])) {
+				const float thresh = 0.00025118864315095795; // -72dB
+				if (peak[0] > thresh) {
+					for (int i = 0; i < 12; ++i) {
+						feature[i] = peak[i];
+					}
+									       
+					// Multi-layer perceptron. 12
+					// inputs, 2 hidden layers and
+					// 1 output. Decide if it is
+					// an onset or not.
+					const float bias = 1.0;
+					float input_coef[][2] = {
+						{ 0.55564018,  0.74399126},
+						{-0.36071648,  0.06788682},
+						{-0.96500742,  2.40568343},
+						{ 1.10200468, -0.85314039},
+						{-0.91889875,  1.39357203},
+						{-0.12007612,  0.24577365},
+						{ 1.87284722, -1.34054456},
+						{-1.07809225,  2.35744059},
+						{-0.39912328,  0.86952983},
+						{ 0.40117409, -0.13387597},
+						{ 2.22646752, -2.01398985},
+						{-0.5373054,   1.08200508}
+					};
 					
-					const uint32_t velocity = (int) (127*2.5*peak[1]);
-					const int64_t frame_time = n; // FIXME: precise location of the zero-crossing
-					forge->enqueue_midi_note(42, velocity, frame_time);
-				}
-				if (o1 > 0.5) {
-					// Send event
-					std::cerr << "Mid = " << peak[0] << ", " << peak[1] << std::endl;
+					float hidden_coef[][2] = {
+						{ 1.4522158 }, {-3.23596404}
+					};
 					
-					const uint32_t velocity = (int) (127*2.5*peak[1]);
-					const int64_t frame_time = n; // FIXME: precise location of the zero-crossing
-					forge->enqueue_midi_note(43, velocity, frame_time);
+					float h0 = 0.30643672*bias;
+					for (int i = 0; i < 12; ++i) {
+						h0 += input_coef[i][0]*feature[i];
+					}
+					h0 = relu(h0);
+					float h1 = 1.14179894*bias;
+					for (int i = 0; i < 12; ++i) {
+						h1 += input_coef[i][1]*feature[i];
+					}
+					h1 = relu(h1);
+					
+					float o0 = -1.52301205*bias;
+					o0 += hidden_coef[0][0]*h0;
+					o0 += hidden_coef[0][1]*h1;
+					o0 = logistic(o0);
+					
+					// Send event
+					float onset_peak = 0.0;
+					for (int i = 0; i < 12; ++i) {
+						onset_peak += peak[i];
+					}		
+					std::cout << o0 << ", " << onset_peak << std::endl;
+					
+					const uint32_t velocity = (int) (127*(onset_peak));
+					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
+					//forge->enqueue_midi_note(41, velocity, frame_time);
+					
+					if (o0 > 0.5) {
+						forge->enqueue_midi_note(42, velocity, frame_time);
+					}
+					
+					// Shift memory and reset the current values
+					for (int i = 12; i > 0; --i) {
+						peak[i] = peak[i-1];
+					}
+					peak[0] = std::fabs(x[0]);
+				} else {
+					// SKIP
 				}
 				
-				// Shift memory and reset the current values
-				area[2] = area[1];	
-				area[1] = area[0];
-				area[0] = 0.0;
-				
-				peak[1] = peak[0];
-				peak[0] = 0.0;
-				
-				width[2] = width[1];
-				width[1] = width[0];
-				width[0] = 0;
 			} else {
-				// Continue accumulating data for the features
-				area[0] += x[0];
+				// Continue accumulating data for the features				
 				peak[0] = (std::fabs(x[0]) > peak[0]) ? std::fabs(x[0]) : peak[0];
-				width[0] += 1;
 			}
 
 			x[1] = x[0];
 
+			fVec0[2] = fVec0[1];
+			fVec0[1] = fVec0[0];
+			for (int j0 = 4; (j0 > 0); j0 = (j0 - 1)) {
+				fVec1[j0] = fVec1[(j0 - 1)];
+			}
+			for (int j1 = 4; (j1 > 0); j1 = (j1 - 1)) {
+				fVec2[j1] = fVec2[(j1 - 1)];
+			}
+		       
 			// // TODO: Other channel
 			// const float abs2 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
 			// const bool trigger2 = (abs2 > threshold);		
