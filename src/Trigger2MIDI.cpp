@@ -59,6 +59,8 @@ namespace jkbd {
 			float tmp3 = (r0[0] - r3[0]) * gain;
 			a[0] = std::min<float>(1.0f, std::max<float>(0.0f, tmp3));
 
+			cv_out[n] = a[0];
+			
 			if (is_zero_crossing(x[0], x[1])) {
 				// `peak[0]` is the maximum absolute
 				// value since the last zero-crossing
@@ -99,15 +101,7 @@ namespace jkbd {
 			r2[1] = r2[0];
 			r1[1] = r1[0];
 			r0[1] = r0[0];
-			r3[1] = r3[0];
-		       
-			// // TODO: Other channel
-			// const float abs2 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
-			// const bool trigger2 = (abs2 > threshold);		
-			// if (trigger2) {
-                        //         const uint32_t velocity = (int) (abs2*127);
-			// 	forge->enqueue_midi_note(43, velocity, n);
-			// }
+			r3[1] = r3[0];		      
 		}
 		forge->finish();
 	}
@@ -144,12 +138,12 @@ namespace jkbd {
 		case Trigger2MIDI::Port::SNARE:
 			self->trigger_in[Trigger2MIDI::Port::SNARE] = static_cast<float*>(data);
 			break;
-		case Trigger2MIDI::Port::TOM:
-			self->trigger_in[Trigger2MIDI::Port::TOM] = static_cast<float*>(data);
+		case Trigger2MIDI::Port::CV_OUT:
+			self->cv_out = static_cast<float*>(data);
 			break;			
 		case Trigger2MIDI::Port::MIDI_OUT:
 			self->midi_out = static_cast<LV2_Atom_Sequence*>(data);
-			break;     
+			break;
 		}
 	}
 	

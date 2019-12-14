@@ -38,18 +38,16 @@
 namespace jkbd {
 	class Trigger2MIDI {
 	public:
-		//Trigger2MIDI();
-		//~Trigger2MIDI();
-		
 		enum Port {
 			SNARE = 0, // must a valid index in `trigger_in[]`!
-			TOM = 1,			
-			MIDI_OUT = 2
+			CV_OUT = 1,
+			MIDI_OUT = 2,
 		};
 		
 		// Port buffers
 		float* trigger_in[2];
 		LV2_Atom_Sequence* midi_out;
+		float* cv_out;
 		
 		void sample_rate(double sr);
 		void run(uint32_t n_samples);
