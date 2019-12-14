@@ -55,45 +55,40 @@ namespace jkbd {
 			r0[0] = std::max<float>(tmp1, ((s9 * r0[1]) + (s10 * tmp1)));
 			r3[0] = (s11 * r3[1]) + (s12 * r0[0]);
 			// Trim the amplitude follower output to [0, 1]
-			const float gain = 200.0; // ??? a lot...
+			const float gain = 66.0;
 			float tmp3 = (r0[0] - r3[0]) * gain;
 			a[0] = std::min<float>(1.0f, std::max<float>(0.0f, tmp3));
 
 			cv_out[n] = a[0];
-			
-			if (is_zero_crossing(x[0], x[1])) {
-				// `peak[0]` is the maximum absolute
-				// value since the last zero-crossing
-				// of the input signal.  `af_peak[0]`
-				// is the maximum absolute value since
-				// the last zero-crossing of the
-				// amplitude follower.
-				
-				if ((af_peak[0] < 0.5f) && (af_peak[1] > 0.5f)) {
-					// Send event
-					//std::cerr << "PEAK! " << peak[4] << ", " << peak[3] << ", " << peak[2] << ", " << peak[1] << ", " << peak[0] << std::endl;
 
-					const uint32_t velocity = (int) 127 * (peak[4] + peak[3] + peak[2]);
-					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
-					forge->enqueue_midi_note(42, velocity, frame_time);
-				} else {
-					// SKIP
-				}
+			const float threshold = 0.5f;
+			if (a[0] > threshold) {
+				// While the amplitude envelope is
+				// high, measure the peak.
 
-				peak[4] = peak[3];
-				peak[3] = peak[2];
-				peak[2] = peak[1];
-				peak[1] = peak[0];
-				peak[0] = std::fabs(x[0]);
-
-				af_peak[1] = af_peak[0];
-				af_peak[0] = std::fabs(a[0]);
-			} else {
-				// Continue accumulating data for the features				
 				peak[0] = (std::fabs(x[0]) > peak[0]) ? std::fabs(x[0]) : peak[0];
-				af_peak[0] = (std::fabs(x[0]) > af_peak[0]) ? std::fabs(a[0]) : af_peak[0];				
-			}
+			} else {
+				// If the amplitude envelope is low
+				// but was high before, emit a MIDI
+				// event.
+				if (a[1] > threshold) {
+					// Send event
+					const uint32_t velocity = (int) 127 * (peak[0]);
+					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
+					std::cerr << "PEAK! " << 127*peak[1] << ", " << velocity << ", " << peak[0] << std::endl;
+					forge->enqueue_midi_note(42, velocity, frame_time);
 
+					// Reset the measurement.
+					peak[4] = peak[3];
+					peak[3] = peak[2];
+					peak[2] = peak[1];
+					peak[1] = peak[0];
+					peak[0] = std::fabs(x[0]);					
+				} else {
+					// Ignore
+				}				
+			}
+			
 			a[1] = a[0];
 			x[1] = x[0];
 
