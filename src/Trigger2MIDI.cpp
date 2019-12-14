@@ -27,7 +27,7 @@ namespace jkbd {
 		const float lowpass_freq = 360.0f;
 		const float highpass_freq = 90.0f;
 
-		const float release = 128.0f;
+		const float release = 256.0f;
 		const float attack = release - 1.0;
 
 		float s0 = (1.0f / std::tan(c0 * lowpass_freq));
@@ -55,13 +55,13 @@ namespace jkbd {
 			r0[0] = std::max<float>(tmp1, ((s9 * r0[1]) + (s10 * tmp1)));
 			r3[0] = (s11 * r3[1]) + (s12 * r0[0]);
 			// Trim the amplitude follower output to [0, 1]
-			const float gain = 66.0;
+			const float gain = 78.0;
 			float tmp3 = (r0[0] - r3[0]) * gain;
 			a[0] = std::min<float>(1.0f, std::max<float>(0.0f, tmp3));
 
 			cv_out[n] = a[0];
 
-			const float threshold = 0.5f;
+			const float threshold = 0.25f;
 			if (a[0] > threshold) {
 				// While the amplitude envelope is
 				// high, measure the peak.
@@ -73,9 +73,10 @@ namespace jkbd {
 				// event.
 				if (a[1] > threshold) {
 					// Send event
-					const uint32_t velocity = (int) 127 * (peak[0]);
+					const uint32_t velocity = std::min<int>(127, std::max<int>(0, (int)(127 * peak[0])));
 					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
-					std::cerr << "PEAK! " << 127*peak[1] << ", " << velocity << ", " << peak[0] << std::endl;
+					float dB = 20*log10(peak[0]);
+					std::cerr << "HIT! " << 127*1.2*peak[0] << ", " << peak[0] << ", " << dB << std::endl;
 					forge->enqueue_midi_note(42, velocity, frame_time);
 
 					// Reset the measurement.
