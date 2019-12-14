@@ -21,106 +21,85 @@ namespace jkbd {
 	void Trigger2MIDI::run(uint32_t n_samples) {
 		forge->prepare(midi_out);
 
-		const float sampling_freq = 44100.0;
-		const float fConst0 = std::tan((873.362732f / std::min<float>(192000.0f, std::max<float>(1.0f, float(sampling_freq)))));
-		const float fConst1 = (1.0f / fConst0);
-		const float fConst2 = (1.0f / (((fConst1 + 1.41421354f) / fConst0) + 1.0f));
-		const float fConst3 = (((fConst1 + -1.41421354f) / fConst0) + 1.0f);
-		const float fConst4 = (2.0f * (1.0f - (1.0f / (fConst0*fConst0))));
-		
+		// Highpass, lowpass and amplitude follower
+		//const float M_PI = 3.14159265358979323846;
+		const float c0 = (M_PI / std::min<float>(192000.0f, std::max<float>(1.0f, Trigger2MIDI::sr)));
+		const float lowpass_freq = 360.0f;
+		const float highpass_freq = 90.0f;
+
+		const float release = 128.0f;
+		const float attack = release - 1.0;
+
+		float s0 = (1.0f / std::tan(c0 * lowpass_freq));
+		float s1 = (1.0f / (s0 + 1.0f));
+		float s2 = (1.0f - s0);
+		float s3 = std::tan(c0 * highpass_freq);
+		float s4 = (1.0f / s3);
+		float s5 = (s4 + 1.0f);
+		float s6 = (0.0f - (1.0f / (s5 * s3)));
+		float s7 = (1.0f / s5);
+		float s8 = (1.0f - s4);
+		float s9 = std::exp(0.0f - (1.0f / attack));
+		float s10 = (1.0f - s9);
+		float s11 = std::exp(0.0f - (1.0f / release));
+		float s12 = (1.0f - s11);
+
 		for (uint32_t n = 0; n < n_samples; ++n) {
-			// 2nd order Butterworth lowpass filter at 278Hz.
-			fRec0[0] = (trigger_in[Trigger2MIDI::Port::SNARE][n] - (fConst2 * ((fConst3 * fRec0[2]) + (fConst4 * fRec0[1]))));
-			x[0] = fConst2 * (fRec0[2] + (fRec0[0] + (2.0f * fRec0[1])));
-			fRec0[2] = fRec0[1];
-			fRec0[1] = fRec0[0];
+			x[0] = trigger_in[Trigger2MIDI::Port::SNARE][n];
+
+			float tmp0 = x[0];
+			v0[0] = tmp0;
+			r2[0] = (s6 * v0[1]) - (s7 * ((s8 * r2[1]) - (s4 * tmp0)));
+			r1[0] = 0.0f - (s1 * ((s2 * r1[1]) - (r2[0] + r2[1])));
+			float tmp1 = std::fabs(r1[0]);
+			r0[0] = std::max<float>(tmp1, ((s9 * r0[1]) + (s10 * tmp1)));
+			r3[0] = (s11 * r3[1]) + (s12 * r0[0]);
+			// Trim the amplitude follower output to [0, 1]
+			const float gain = 200.0; // ??? a lot...
+			float tmp3 = (r0[0] - r3[0]) * gain;
+			a[0] = std::min<float>(1.0f, std::max<float>(0.0f, tmp3));
 
 			if (is_zero_crossing(x[0], x[1])) {
-				const float thresh = 0.00025118864315095795; // -72dB
-				if (peak[0] > thresh) {
-					for (int i = 0; i < 12; ++i) {
-						feature[i] = peak[i];
-					}
-									       
-					// Multi-layer perceptron. 12
-					// inputs, 2 hidden layers and
-					// 1 output. Decide if it is
-					// an onset or not.
-					const float bias = 1.0;
-					float input_coef[][2] = {
-						{ 0.55564018,  0.74399126},
-						{-0.36071648,  0.06788682},
-						{-0.96500742,  2.40568343},
-						{ 1.10200468, -0.85314039},
-						{-0.91889875,  1.39357203},
-						{-0.12007612,  0.24577365},
-						{ 1.87284722, -1.34054456},
-						{-1.07809225,  2.35744059},
-						{-0.39912328,  0.86952983},
-						{ 0.40117409, -0.13387597},
-						{ 2.22646752, -2.01398985},
-						{-0.5373054,   1.08200508}
-					};
-					
-					float hidden_coef[][2] = {
-						{ 1.4522158 }, {-3.23596404}
-					};
-					
-					float h0 = 0.30643672*bias;
-					for (int i = 0; i < 12; ++i) {
-						h0 += input_coef[i][0]*feature[i];
-					}
-					h0 = relu(h0);
-					float h1 = 1.14179894*bias;
-					for (int i = 0; i < 12; ++i) {
-						h1 += input_coef[i][1]*feature[i];
-					}
-					h1 = relu(h1);
-					
-					float o0 = -1.52301205*bias;
-					o0 += hidden_coef[0][0]*h0;
-					o0 += hidden_coef[0][1]*h1;
-					o0 = logistic(o0);
-					
+				// `peak[0]` is the maximum absolute
+				// value since the last zero-crossing
+				// of the input signal.  `af_peak[0]`
+				// is the maximum absolute value since
+				// the last zero-crossing of the
+				// amplitude follower.
+				
+				if ((af_peak[0] < 0.5f) && (af_peak[1] > 0.5f)) {
 					// Send event
-					float onset_peak = 0.0;
-					for (int i = 0; i < 12; ++i) {
-						onset_peak += peak[i];
-					}		
-					std::cout << o0 << ", " << onset_peak << std::endl;
-					
-					const uint32_t velocity = (int) (127*(onset_peak));
+					//std::cerr << "PEAK! " << peak[4] << ", " << peak[3] << ", " << peak[2] << ", " << peak[1] << ", " << peak[0] << std::endl;
+
+					const uint32_t velocity = (int) 127 * (peak[4] + peak[3] + peak[2]);
 					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
-					//forge->enqueue_midi_note(41, velocity, frame_time);
-					
-					if (o0 > 0.5) {
-						forge->enqueue_midi_note(42, velocity, frame_time);
-					}
-					
-					// Shift memory and reset the current values
-					for (int i = 12; i > 0; --i) {
-						peak[i] = peak[i-1];
-					}
-					peak[0] = std::fabs(x[0]);
+					forge->enqueue_midi_note(42, velocity, frame_time);
 				} else {
 					// SKIP
 				}
-				
+
+				peak[4] = peak[3];
+				peak[3] = peak[2];
+				peak[2] = peak[1];
+				peak[1] = peak[0];
+				peak[0] = std::fabs(x[0]);
+
+				af_peak[1] = af_peak[0];
+				af_peak[0] = std::fabs(a[0]);
 			} else {
 				// Continue accumulating data for the features				
 				peak[0] = (std::fabs(x[0]) > peak[0]) ? std::fabs(x[0]) : peak[0];
+				af_peak[0] = (std::fabs(x[0]) > af_peak[0]) ? std::fabs(a[0]) : af_peak[0];				
 			}
 
+			a[1] = a[0];
 			x[1] = x[0];
 
-			fVec0[2] = fVec0[1];
-			fVec0[1] = fVec0[0];
-			for (int j0 = 4; (j0 > 0); j0 = (j0 - 1)) {
-				fVec1[j0] = fVec1[(j0 - 1)];
-			}
-			for (int j1 = 4; (j1 > 0); j1 = (j1 - 1)) {
-				fVec2[j1] = fVec2[(j1 - 1)];
-			}
+			v0[1] = v0[0];
+			r2[1] = r2[0];
+			r1[1] = r1[0];
+			r0[1] = r0[0];
+			r3[1] = r3[0];
 		       
 			// // TODO: Other channel
 			// const float abs2 = std::fabs(trigger_in[Trigger2MIDI::Port::SNARE][n]);
