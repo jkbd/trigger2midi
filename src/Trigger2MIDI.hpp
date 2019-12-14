@@ -56,24 +56,18 @@ namespace jkbd {
 		MIDIEventForge* forge;
 		
 	private:
-		// // Note: x[0] is x_{n} and x[1] is backward in time x_{n-1}
+		// Note: x[0] is x_{n} and x[1] is backward in time x_{n-1}
 		float x[2]{ 0.0f, 0.0f };
 		float a[2]{ 0.0f, 0.0f };
-
+		float peak[2]{ 0.0f };
+		
 		float v0[2]{ 0.0f, 0.0f };
 		float r0[2]{ 0.0f, 0.0f };
 		float r1[2]{ 0.0f, 0.0f };
 		float r2[2]{ 0.0f, 0.0f };
 		float r3[2]{ 0.0f, 0.0f };
 		
-		// bool index{ false };
-		double sr{ 8000.0 };
-		
-		// The number of samples between the zero crossings.
-		//uint32_t width[3]{ 0, 0, 0 };
-		
-		float peak[5]{ 0.0f };
-		float af_peak[2]{ 0.0f };
+		double sr{ 8000.0 };	    
 	};
 	
 	static LV2_Handle

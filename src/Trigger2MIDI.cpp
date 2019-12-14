@@ -1,18 +1,6 @@
 #include "Trigger2MIDI.hpp"
 
 namespace jkbd {
-	float logistic(float x) {
-		return 1 / (1 + exp(-x));
-	}
-
-	float relu(float x) {
-		return std::fmax(0, x);
-	}
-
-	bool is_zero_crossing(float x0, float x1) {
-		return (x0 >= 0.0f) && (x1 < 0.0f) || (x0 < 0.0f) && (x1 >= 0.0f);
-	}
-	
 	void Trigger2MIDI::sample_rate(double sr) {
 		assert((8000.0 <= sr) and (sr <= 192000.0));
 		Trigger2MIDI::sr = sr;
@@ -22,11 +10,9 @@ namespace jkbd {
 		forge->prepare(midi_out);
 
 		// Highpass, lowpass and amplitude follower
-		//const float M_PI = 3.14159265358979323846;
 		const float c0 = (M_PI / std::min<float>(192000.0f, std::max<float>(1.0f, Trigger2MIDI::sr)));
 		const float lowpass_freq = 360.0f;
 		const float highpass_freq = 90.0f;
-
 		const float release = 256.0f;
 		const float attack = release - 1.0;
 
@@ -80,13 +66,10 @@ namespace jkbd {
 					forge->enqueue_midi_note(42, velocity, frame_time);
 
 					// Reset the measurement.
-					peak[4] = peak[3];
-					peak[3] = peak[2];
-					peak[2] = peak[1];
 					peak[1] = peak[0];
 					peak[0] = std::fabs(x[0]);					
 				} else {
-					// Ignore
+					// Nothing to do
 				}				
 			}
 			
@@ -97,7 +80,7 @@ namespace jkbd {
 			r2[1] = r2[0];
 			r1[1] = r1[0];
 			r0[1] = r0[0];
-			r3[1] = r3[0];		      
+			r3[1] = r3[0];
 		}
 		forge->finish();
 	}
