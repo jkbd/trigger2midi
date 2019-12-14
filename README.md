@@ -1,8 +1,9 @@
 # Trigger2MIDI
 
-**Super early development state!**
+Convert electronic drum trigger signals to MIDI events. You need a
+sound card with analog inputs and a LV2-plug-in host.
 
-Convert electronic drum trigger signals to MIDI events.
+**Still under development.**
 
 ## Build
 ```bash
@@ -27,6 +28,7 @@ $ cmake -D CMAKE_INSTALL_PREFIX=/your/path ..
 
 ## Run
 
+For example with `jalv`:
 ```
 $ jalv https://github.com/jkbd/trigger2midi
 ```
