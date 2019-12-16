@@ -42,12 +42,14 @@ namespace jkbd {
 			SNARE = 0, // must a valid index in `trigger_in[]`!
 			CV_OUT = 1,
 			MIDI_OUT = 2,
+			NOTE_NUMBER = 3
 		};
 		
 		// Port buffers
 		float* trigger_in[2];
 		LV2_Atom_Sequence* midi_out;
 		float* cv_out;
+		float* note_number;
 		
 		void sample_rate(double sr);
 		void run(uint32_t n_samples);

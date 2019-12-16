@@ -63,7 +63,8 @@ namespace jkbd {
 					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
 					float dB = 20*log10(peak[0]);
 					std::cerr << "HIT! " << 127*1.2*peak[0] << ", " << peak[0] << ", " << dB << std::endl;
-					forge->enqueue_midi_note(42, velocity, frame_time);
+					int note = static_cast<int>(*note_number);
+					forge->enqueue_midi_note(note, velocity, frame_time);
 
 					// Reset the measurement.
 					peak[1] = peak[0];
@@ -122,6 +123,9 @@ namespace jkbd {
 			break;			
 		case Trigger2MIDI::Port::MIDI_OUT:
 			self->midi_out = static_cast<LV2_Atom_Sequence*>(data);
+			break;
+		case Trigger2MIDI::Port::NOTE_NUMBER:
+			self->note_number = static_cast<float*>(data);
 			break;
 		}
 	}

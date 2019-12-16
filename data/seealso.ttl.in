@@ -43,4 +43,16 @@
 		lv2:index 2 ;
 		lv2:symbol "MidiOut" ;
 		lv2:name "MIDI Output" ;
-	] .
+	] , [
+		a lv2:ControlPort ,
+			lv2:InputPort ;
+		lv2:index 3 ;
+		lv2:symbol "note" ;
+		lv2:name "MIDI Note Number" ;
+		lv2:minimum 0 ;
+		lv2:maximum 127 ;
+		lv2:default 38;
+		lv2:portProperty lv2:integer;
+		units:unit units:midiNote ;
+		rdfs:comment "Note number to send."
+	].
