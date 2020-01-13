@@ -9,42 +9,25 @@ namespace jkbd {
 	void Trigger2MIDI::run(uint32_t n_samples) {
 		forge->prepare(midi_out);
 
-		// Highpass, lowpass and amplitude follower
-		const float c0 = (M_PI / std::min<float>(192000.0f, std::max<float>(1.0f, Trigger2MIDI::sr)));
-		const float lowpass_freq = 360.0f;
-		const float highpass_freq = 90.0f;
-		const float release = 256.0f;
-		const float attack = release - 1.0;
+		const float c0 = (M_PI / Trigger2MIDI::sr);
+		const float attack = 128.0;
+		const float release = attack*16.0f;
+		assert(attack < release);
 
-		float s0 = (1.0f / std::tan(c0 * lowpass_freq));
-		float s1 = (1.0f / (s0 + 1.0f));
-		float s2 = (1.0f - s0);
-		float s3 = std::tan(c0 * highpass_freq);
-		float s4 = (1.0f / s3);
-		float s5 = (s4 + 1.0f);
-		float s6 = (0.0f - (1.0f / (s5 * s3)));
-		float s7 = (1.0f / s5);
-		float s8 = (1.0f - s4);
-		float s9 = std::exp(0.0f - (1.0f / attack));
-		float s10 = (1.0f - s9);
-		float s11 = std::exp(0.0f - (1.0f / release));
-		float s12 = (1.0f - s11);
+		float s0 = std::exp(0.0f - (c0 / release));
+		float s1 = 1.0f - s0;
+		float s2 = std::exp(0.0f - (c0 / attack));
+		float s3 = 1.0f - s2;
 
 		for (uint32_t n = 0; n < n_samples; ++n) {
 			x[0] = trigger_in[Trigger2MIDI::Port::SNARE][n];
 
-			float tmp0 = x[0];
-			v0[0] = tmp0;
-			r2[0] = (s6 * v0[1]) - (s7 * ((s8 * r2[1]) - (s4 * tmp0)));
-			r1[0] = 0.0f - (s1 * ((s2 * r1[1]) - (r2[0] + r2[1])));
-			float tmp1 = std::fabs(r1[0]);
-			r0[0] = std::max<float>(tmp1, ((s9 * r0[1]) + (s10 * tmp1)));
-			r3[0] = (s11 * r3[1]) + (s12 * r0[0]);
-			// Trim the amplitude follower output to [0, 1]
-			const float gain = 78.0;
-			float tmp3 = (r0[0] - r3[0]) * gain;
-			a[0] = std::min<float>(1.0f, std::max<float>(0.0f, tmp3));
+			// Envelope difference
+			r0[0] = std::max<float>(x[0], ((s0 * r0[1]) + (s1 * x[0])));
+			r1[0] = (s2 * r1[1]) + (s3 * r0[0]);
+			a[0] = std::max<float>(0.0f, (r0[0] - r1[0]));
 
+			// Debug output
 			cv_out[n] = a[0];
 
 			const float threshold = 0.25f;
@@ -77,11 +60,8 @@ namespace jkbd {
 			a[1] = a[0];
 			x[1] = x[0];
 
-			v0[1] = v0[0];
-			r2[1] = r2[0];
-			r1[1] = r1[0];
 			r0[1] = r0[0];
-			r3[1] = r3[0];
+			r1[1] = r1[0];
 		}
 		forge->finish();
 	}
