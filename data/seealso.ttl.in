@@ -34,7 +34,8 @@
 			lv2:OutputPort ;
 		lv2:index 1 ;
 		lv2:symbol "CV" ;
-		lv2:name "CV Impulse Output"
+		lv2:name "CV Impulse Output" ;
+		rdfs:comment "Envelope for debugging."
 	] , [
 		a atom:AtomPort ,
 			lv2:OutputPort ;
@@ -55,4 +56,34 @@
 		lv2:portProperty lv2:integer;
 		units:unit units:midiNote ;
 		rdfs:comment "Note number to send."
-	].
+	] , [
+		a lv2:ControlPort ,
+			lv2:InputPort ;
+		lv2:index 5 ;
+		lv2:symbol "mask" ;
+		lv2:name "Mask Retrigger" ;
+		lv2:minimum 1 ;
+		lv2:maximum 64 ;
+		lv2:default 16 ;
+		units:unit units:coef
+	] , [
+		a lv2:ControlPort ,
+			lv2:InputPort ;
+		lv2:index 6 ;
+		lv2:symbol "dyn" ;
+		lv2:name "Dynamic Range" ;
+		lv2:minimum -144.0 ;
+		lv2:maximum 0.0 ;
+		lv2:default -96.0 ;
+		units:unit units:db
+	] , [
+		a lv2:ControlPort ,
+			lv2:InputPort ;
+		lv2:index 7 ;
+		lv2:symbol "len" ;
+		lv2:name "Note Length" ;
+		lv2:minimum 1 ;
+		lv2:maximum 5 ;
+		lv2:default 1 ;
+		units:unit units:coef
+	] .

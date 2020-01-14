@@ -107,6 +107,15 @@ namespace jkbd {
 		case Trigger2MIDI::Port::NOTE_NUMBER:
 			self->note_number = static_cast<float*>(data);
 			break;
+		case Trigger2MIDI::Port::MASK_RETRIGGER:
+			self->mask_retrigger = static_cast<float*>(data);
+			break;
+		case Trigger2MIDI::Port::DYNAMIC_RANGE:
+			self->dynamic_range = static_cast<float*>(data);
+			break;
+		case Trigger2MIDI::Port::NOTE_LENGTH:
+			self->note_length = static_cast<float*>(data);
+			break;			
 		}
 	}
 	
@@ -122,7 +131,7 @@ namespace jkbd {
 	}
 	
 	static void cleanup(LV2_Handle instance) {
-		// TODO handle `forge`
+		// TODO: handle `forge`
 		delete static_cast<Trigger2MIDI*>(instance);
 	}
 	

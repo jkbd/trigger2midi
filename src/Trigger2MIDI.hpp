@@ -42,7 +42,10 @@ namespace jkbd {
 			SNARE = 0, // must a valid index in `trigger_in[]`!
 			CV_OUT = 1,
 			MIDI_OUT = 2,
-			NOTE_NUMBER = 3
+			NOTE_NUMBER = 3,
+			MASK_RETRIGGER = 4,
+			DYNAMIC_RANGE = 5,
+			NOTE_LENGTH = 6
 		};
 		
 		// Port buffers
@@ -50,6 +53,9 @@ namespace jkbd {
 		LV2_Atom_Sequence* midi_out;
 		float* cv_out;
 		float* note_number;
+		float* mask_retrigger;
+		float* dynamic_range;
+		float* note_length;
 		
 		void sample_rate(double sr);
 		void run(uint32_t n_samples);
