@@ -39,7 +39,7 @@ namespace jkbd {
 	class Trigger2MIDI {
 	public:
 		enum Port {
-			SNARE = 0, // must a valid index in `trigger_in[]`!
+			SNARE = 0, // must be a valid index in `trigger_in[]`!
 			CV_OUT = 1,
 			MIDI_OUT = 2,
 			NOTE_NUMBER = 3,
@@ -67,13 +67,16 @@ namespace jkbd {
 		// Note: x[0] is x_{n} and x[1] is backward in time x_{n-1}
 		float x[2]{ 0.0f, 0.0f };
 		float a[2]{ 0.0f, 0.0f };
+		float b[2]{ 0.0f, 0.0f };
+		float c[2]{ 0.0f, 0.0f };
 		float peak[2]{ 0.0f };
 		
 		float v0[2]{ 0.0f, 0.0f };
-		float r0[2]{ 0.0f, 0.0f };
-		float r1[2]{ 0.0f, 0.0f };
+		float r0[2]{ 0.0f, 0.0f }; // Amplitude follower
+		float r1[2]{ 0.0f, 0.0f }; // Amplitude follower
 		float r2[2]{ 0.0f, 0.0f };
 		float r3[2]{ 0.0f, 0.0f };
+		float r4[2]{ 0.0f, 0.0f };		
 		
 		double sr{ 8000.0 };	    
 	};

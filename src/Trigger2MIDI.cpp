@@ -11,13 +11,24 @@ namespace jkbd {
 
 		const float c0 = (M_PI / Trigger2MIDI::sr);
 		const float attack = 128.0;
-		const float release = attack*16.0f;
+		// No need to smooth user input since we never listen
+		// to the side-chain.
+		const float release = attack * (*mask_retrigger);	      
 		assert(attack < release);
 
+		const float threshold = std::pow(10.0f, (-0.0500000007f * (*dynamic_range)));
+		assert((0.0 < threshold) && (threshold < 1.0));
+
+		const float lowpass_freq = 10.0;
+		
 		float s0 = std::exp(0.0f - (c0 / release));
 		float s1 = 1.0f - s0;
 		float s2 = std::exp(0.0f - (c0 / attack));
 		float s3 = 1.0f - s2;
+
+		float s4 = 1.0f / std::tan(c0 * lowpass_freq);
+		float s5 = 1.0f / (s4 + 1.0f);
+		float s6 = 1.0f - s4;
 
 		for (uint32_t n = 0; n < n_samples; ++n) {
 			x[0] = trigger_in[Trigger2MIDI::Port::SNARE][n];
@@ -26,20 +37,19 @@ namespace jkbd {
 			r0[0] = std::max<float>(x[0], ((s0 * r0[1]) + (s1 * x[0])));
 			r1[0] = (s2 * r1[1]) + (s3 * r0[0]);
 			a[0] = std::max<float>(0.0f, (r0[0] - r1[0]));
-
-			// Debug output
+			
+			// Debug envelope output
 			cv_out[n] = a[0];
-
-			const float threshold = 0.25f;
+			
+			// Analyse onset window
 			if (a[0] > threshold) {
 				// While the amplitude envelope is
-				// high, measure the peak.
-
+				// high, measure the signal peak.
 				peak[0] = (std::fabs(x[0]) > peak[0]) ? std::fabs(x[0]) : peak[0];
 			} else {
 				// If the amplitude envelope is low
 				// but was high before, emit a MIDI
-				// event.
+				// Note-On event.
 				if (a[1] > threshold) {
 					// Send event
 					const uint32_t velocity = std::min<int>(127, std::max<int>(0, (int)(127 * peak[0])));
@@ -51,17 +61,43 @@ namespace jkbd {
 
 					// Reset the measurement.
 					peak[1] = peak[0];
-					peak[0] = std::fabs(x[0]);					
+					peak[0] = std::fabs(x[0]);
 				} else {
 					// Nothing to do
-				}				
+				}
 			}
-			
+		
+			// Lowpass sustain envelope
+			b[0] = std::max<float>(0.0f, (r1[0] - r0[0]));			
+			v0[0] = b[0];
+			r2[0] = 0.0f - (s5 * ((s6 * r2[1]) - (v0[1] + b[0])));
+			c[0] = r2[0];
+
+			// Analyse release window
+			if (c[0] > threshold) {
+			} else {
+				if (c[1] > threshold) {
+					// Send event
+					const uint32_t velocity = 0;
+					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
+					std::cerr << "END! " << std::endl;
+					int note = static_cast<int>(*note_number);
+					forge->enqueue_midi_note(note, velocity, frame_time);
+				} else {
+					// Nothing to do
+				}
+			}
+	
 			a[1] = a[0];
+			b[1] = b[0];			
 			x[1] = x[0];
 
+			v0[1] = v0[0];
+			
 			r0[1] = r0[0];
 			r1[1] = r1[0];
+			r2[1] = r2[0];
+			
 		}
 		forge->finish();
 	}
