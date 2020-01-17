@@ -22,7 +22,8 @@ namespace jkbd {
 
 	
 	/**
-	 * Attack and relase in seconds.
+	 * Calculate the envelope for the transient only. `attack` and
+	 * `release` are in seconds.
 	 */
 	void transient_envelope(float input[], float output[], uint32_t n_samples, float sample_rate,
 				transient_envelope_state_t *state,
@@ -33,6 +34,7 @@ namespace jkbd {
 		assert(attack > 0);
 		assert(release > 0);
 		assert(attack < release);
+		assert(sample_rate != 0);
 
 		float *const r0 = state->r0;
 		float *const r1 = state->r1;
@@ -88,12 +90,7 @@ namespace jkbd {
 				if (e[1] > threshold) {
 					// Send event
 					const uint32_t velocity = std::min<int>(127, std::max<int>(0, (int)(127 * peak[0])));
-					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range
-
-					// DEBUG
-					float dB = 20*log10(peak[0]);
-					std::cerr << "HIT! " << 127*1.2*peak[0] << ", " << peak[0] << ", " << dB << std::endl;
-					
+					const int64_t frame_time = n; //-(zero[0]+zero[1]); // TODO guard range, be precise with the timestamp
 					forge->enqueue_midi_note(note, velocity, frame_time);
 
 					// Reset the measurement.
@@ -126,7 +123,7 @@ namespace jkbd {
 				   Trigger2MIDI::transient_envelope_state, attack, release);
 
 		// Send MIDI
-		const float threshold = std::pow(10.0f, (-0.05f * (*dynamic_range)));
+		const float threshold = std::pow(10.0f, (-1.0f * 0.05f * (*dynamic_range)));
 		const int note = static_cast<int>(*note_number);
 		onset_noteon(input, output, forge, n_samples, Trigger2MIDI::sr,
 			     Trigger2MIDI::onset_noteon_state, threshold, note);

@@ -30,8 +30,8 @@ sound card with analog amplified inputs. On the software side you need a
 LV2-plug-in host.
 
 Connect the piezo to the DI-box and connect the DI-box to the
-input. Adjust the gain of the input so the signal does not clip.
-Run the Trigger2MIDI Plug-in, for example with `jalv`:
+input. Adjust the gain of the input so the signal does not clip.  Run
+the Trigger2MIDI Plug-in, for example with the `jalv` host:
 
 ```
 $ jalv https://github.com/jkbd/trigger2midi
@@ -41,9 +41,17 @@ dyn = 42.000000
 mask = 17.000000
 ```
 
+Connect ports in JACK if needed.
+
 First adjust the "Dynamic Range" parameter (in decibel), so other
 noises do not trigger events. Then adjust the "Mask Retrigger"
 parameter, so single hits do not trigger multiple Note On
 events. Rubber pads are likely to need a small value. Undampened mesh
 heads may need a large value. Last set the MIDI note number to your
 requirements.
+
+## Notes
+
+* The control voltage output is meant for debugging
+
+* Right now the plug-in only sends MIDI Note On events, not Note Off.

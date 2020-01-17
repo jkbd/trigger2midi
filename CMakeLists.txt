@@ -1,6 +1,6 @@
 # ISC License
 #
-# Copyright (c) 2019 Jakob Dübel
+# Copyright (c) 2019-2020 Jakob Dübel
 #
 # Permission to use, copy, modify, and/or distribute this software for
 # any purpose with or without fee is hereby granted, provided that the
@@ -21,7 +21,7 @@ cmake_minimum_required(VERSION 3.4.3)
 # For versioning read https://semver.org/ and
 # http://lv2plug.in/ns/lv2core/lv2core.html#minorVersion
 project(trigger2midi
-    VERSION 0.1.0
+    VERSION 0.2.0
     LANGUAGES CXX C)
 
 set(LV2_URI_PREFIX https://github.com/jkbd/)

@@ -1,6 +1,6 @@
 // ISC License
 //
-// Copyright (c) 2019 Jakob Dübel <jkbd@posteo.de>
+// Copyright (c) 2019-2020 Jakob Dübel <jkbd@posteo.de>
 //
 // Permission to use, copy, modify, and/or distribute this software
 // for any purpose with or without fee is hereby granted, provided
@@ -75,21 +75,7 @@ namespace jkbd {
 		LV2_URID_Map* map;
 		MIDIEventForge* forge;
 		
-	private:
-		// Note: x[0] is x_{n} and x[1] is backward in time x_{n-1}
-		float x[2]{ 0.0f, 0.0f };
-		float a[2]{ 0.0f, 0.0f };
-		float b[2]{ 0.0f, 0.0f };
-		float c[2]{ 0.0f, 0.0f };
-		float peak[2]{ 0.0f };
-		
-		float v0[2]{ 0.0f, 0.0f };
-		float r0[2]{ 0.0f, 0.0f }; // Amplitude follower
-		float r1[2]{ 0.0f, 0.0f }; // Amplitude follower
-		float r2[2]{ 0.0f, 0.0f };
-		float r3[2]{ 0.0f, 0.0f };
-		float r4[2]{ 0.0f, 0.0f };		
-		
+	private:		
 		double sr{ 8000.0 };		
 	};
 	
