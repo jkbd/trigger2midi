@@ -36,6 +36,17 @@
 // A namespace to force these symbols being not exported in the shared
 // library.
 namespace jkbd {
+	typedef struct {
+		float r0[2]{ 0.0f, 0.0f };
+		float r1[2]{ 0.0f, 0.0f };
+	} transient_envelope_state_t;
+
+	typedef struct {
+		float x[2]{ 0.0f, 0.0f };
+		float e[2]{ 0.0f, 0.0f };
+		float peak[2]{ 0.0f, 0.0f };
+	} onset_noteon_state_t;
+	
 	class Trigger2MIDI {
 	public:
 		enum Port {
@@ -56,6 +67,9 @@ namespace jkbd {
 		float* mask_retrigger;
 		float* dynamic_range;
 		float* note_length;
+
+		transient_envelope_state_t* transient_envelope_state;
+		onset_noteon_state_t* onset_noteon_state;
 		
 		void sample_rate(double sr);
 		void run(uint32_t n_samples);
@@ -78,7 +92,7 @@ namespace jkbd {
 		float r3[2]{ 0.0f, 0.0f };
 		float r4[2]{ 0.0f, 0.0f };		
 		
-		double sr{ 8000.0 };	    
+		double sr{ 8000.0 };		
 	};
 	
 	static LV2_Handle
