@@ -55,8 +55,7 @@ namespace jkbd {
 			MIDI_OUT = 2,
 			NOTE_NUMBER = 3,
 			MASK_RETRIGGER = 4,
-			DYNAMIC_RANGE = 5,
-			NOTE_LENGTH = 6
+			DYNAMIC_RANGE = 5
 		};
 		
 		// Port buffers
@@ -66,7 +65,6 @@ namespace jkbd {
 		float* note_number;
 		float* mask_retrigger;
 		float* dynamic_range;
-		float* note_length;
 
 		transient_envelope_state_t* transient_envelope_state;
 		onset_noteon_state_t* onset_noteon_state;

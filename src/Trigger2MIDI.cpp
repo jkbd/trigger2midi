@@ -120,14 +120,13 @@ namespace jkbd {
 		id(input, output, n_samples);
 
 		// Process inplace in the output buffer.
-		const float attack = 128.0/Trigger2MIDI::sr;
-		const float release = 3*attack;
+		const float attack = 256.0/Trigger2MIDI::sr;
+		const float release = (*mask_retrigger) * attack;
 		transient_envelope(output, output, n_samples, Trigger2MIDI::sr,
 				   Trigger2MIDI::transient_envelope_state, attack, release);
 
 		// Send MIDI
-		//const float threshold = std::pow(10.0f, (0.05f * (*dynamic_range)));
-		const float threshold = 0.2;
+		const float threshold = std::pow(10.0f, (-0.05f * (*dynamic_range)));
 		const int note = static_cast<int>(*note_number);
 		onset_noteon(input, output, forge, n_samples, Trigger2MIDI::sr,
 			     Trigger2MIDI::onset_noteon_state, threshold, note);
@@ -184,9 +183,6 @@ namespace jkbd {
 			break;
 		case Trigger2MIDI::Port::DYNAMIC_RANGE:
 			self->dynamic_range = static_cast<float*>(data);
-			break;
-		case Trigger2MIDI::Port::NOTE_LENGTH:
-			self->note_length = static_cast<float*>(data);
 			break;			
 		}
 	}
